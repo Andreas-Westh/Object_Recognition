@@ -82,12 +82,53 @@ parrots_df %>% ggplot(aes(x,y)) +
 as.data.frame(parrots, wide="c") %>% head
 
   # get rgb value
-df <- as.data.frame(parrots, wide="c") %>% mutate(rgb.val = rgb(c.1,c.2,c.3))
-head(df,3)
+df_rgb <- as.data.frame(parrots, wide="c") %>% mutate(rgb.val = rgb(c.1,c.2,c.3))
+head(df_rgb,3)
 
-df %>% ggplot(aes(x,y)) +
+df_rgb %>% ggplot(aes(x,y)) +
   geom_raster(aes(fill = rgb.val)) +
   scale_fill_identity() +
   scale_y_reverse()
 # :)
 
+
+
+# own image
+image <- load.image("Data/berserk_vol1.jpg")
+plot(image)
+
+df <- as.data.frame(image)
+# cut out table
+df_ss <- df %>% filter(x>950 & x<3700 & y>600 & y<2500) %>% 
+  mutate(
+    x = dense_rank(x), # reorder x, so it starts at 1
+    y = dense_rank(y)
+  )
+df_ss %>% as.cimg %>% plot()
+
+# flip it
+df_ss_flip <- df_ss %>% 
+  rename(tmp = x) %>% # make a tmp for x
+  mutate(
+    x = y,
+    y = tmp) %>% 
+  select(-tmp)
+df_ss_flip %>% as.cimg %>% plot()
+# its mirrored
+df_ss_flip$x <- rev(df_ss_flip$x)
+df_ss_flip %>% as.cimg %>% plot()
+
+berserk <- df_ss_flip %>% as.cimg
+
+berserk.g <- grayscale(berserk)
+gr <- imgradient(berserk.g,"xy")
+gr
+plot(gr, layout = "row")
+
+imgradient(berserk.g,"xy") %>% enorm %>% plot()
+
+
+df_ss_flip %>% ggplot(aes(x,y)) +
+  geom_raster(aes(fill=value)) +
+  scale_y_reverse() +
+  scale_fill_continuous(low = "black", high = "white") # bit of a manual grayscale
