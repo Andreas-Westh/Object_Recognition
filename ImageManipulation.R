@@ -1,6 +1,7 @@
 library(imager)
 library(dplyr)
 library(ggplot2)
+library(scales)
 
 # Load images
 parrots <- load.example("parrots")
@@ -59,3 +60,34 @@ gr
 plot(gr, layout = "row")
 
 imgradient(parrots.g,"xy") %>% enorm %>% plot()
+
+
+
+# plotting from the df -----
+parrots_df %>% ggplot(aes(x,y)) +
+  geom_raster(aes(fill=value))
+  # not quite, mainly also due to y being upside down
+
+parrots_df %>% ggplot(aes(x,y)) +
+  geom_raster(aes(fill=value)) +
+  scale_y_reverse() +
+  scale_fill_continuous(low = "black", high = "white") # bit of a manual grayscale
+
+# 2 get color, we need to plot each channel seperately
+parrots_df %>% ggplot(aes(x,y)) + 
+  geom_raster(aes(fill=value)) +
+  facet_wrap(~cc) +
+  scale_y_reverse()
+# we need to make the df in a wide format
+as.data.frame(parrots, wide="c") %>% head
+
+  # get rgb value
+df <- as.data.frame(parrots, wide="c") %>% mutate(rgb.val = rgb(c.1,c.2,c.3))
+head(df,3)
+
+df %>% ggplot(aes(x,y)) +
+  geom_raster(aes(fill = rgb.val)) +
+  scale_fill_identity() +
+  scale_y_reverse()
+# :)
+
