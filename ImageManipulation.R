@@ -3,6 +3,7 @@ library(dplyr)
 library(ggplot2)
 library(scales)
 library(tidyverse)
+library(patchwork)
 
 # Load images
 parrots <- load.example("parrots")
@@ -181,16 +182,23 @@ df_1 %>% ggplot(aes(x,y)) +
 
 
 rgb_plot <- function(df) {
+ original_name <- deparse(substitute(df))
+ 
   p <- df %>% ggplot(aes(x,y)) +
     geom_raster(aes(fill = rgb.val)) +
     scale_fill_identity() +
-    scale_y_reverse()
+    scale_y_reverse() +
+    labs(title = original_name)
+  
+  assign(paste0(original_name, "_plot"), p, envir = .GlobalEnv)
   
   return(p)
 }
 
 rgb_plot(df_3)
 
+# combine plots via patchwork
+df_1_plot + df_2_plot + df_3_plot
 
 
 
