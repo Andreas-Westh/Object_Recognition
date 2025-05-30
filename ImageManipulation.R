@@ -2,6 +2,7 @@ library(imager)
 library(dplyr)
 library(ggplot2)
 library(scales)
+library(tidyverse)
 
 # Load images
 parrots <- load.example("parrots")
@@ -92,8 +93,110 @@ df_rgb %>% ggplot(aes(x,y)) +
 # :)
 
 
+# Split image every 2nd row
+pdf_2 <- parrots_df[seq(2, nrow(parrots_df), by = 2), ]
+pdf_1 <- parrots_df %>% filter(!x %in% pdf_2$x)
 
-# own image
+pdf_2 <- pdf_2 %>% 
+  mutate(
+    x = dense_rank(x),
+    y = dense_rank(y)
+  )
+pdf_1 <- pdf_1 %>% 
+  mutate(
+    x = dense_rank(x),
+    y = dense_rank(y)
+  )
+
+pdf_1 %>% ggplot(aes(x,y)) +
+  geom_raster(aes(fill=value)) +
+  scale_y_reverse() +
+  scale_fill_continuous(low = "black", high = "white") 
+pdf_2 %>% ggplot(aes(x,y)) +
+  geom_raster(aes(fill=value)) +
+  scale_y_reverse() +
+  scale_fill_continuous(low = "black", high = "white")
+
+pdf_2_w <- pdf_2 %>% 
+  mutate(value = value/255) %>% 
+  pivot_wider(names_from = cc) 
+colnames(pdf_2_w) <- c("x","y","R","G","B")
+
+pdf_2_w <- pdf_2_w %>% 
+  mutate(rbg.val = rgb(R,G,B))
+
+pdf_2_w %>% ggplot(aes(x,y)) + 
+  geom_raster(aes(fill=rbg.val)) + 
+  scale_fill_identity() +
+  scale_y_reverse()
+
+# Split function ----
+split_df <- function(df, n) {
+  # row index for modulo splitting
+  df <- df %>% mutate(row_index = row_number())
+  
+  # list of split daraframes
+  splits <- lapply(0:(n-1), function(i) {
+    df_part <- df %>% 
+      filter((row_index - 1) %% n == i) %>% 
+      select(-row_index) %>% 
+      mutate(
+        x = dense_rank(x),
+        y = dense_rank(y)
+      )
+    
+    # covert to wide with RGB
+    df_wide <- df_part %>% 
+      mutate( value = value / 255) %>% 
+      pivot_wider(names_from = cc, values_from = value)
+    
+    colnames(df_wide) <- c("x","y", "R", "G", "B")
+    
+    df_wide <- df_wide %>% 
+      mutate(rgb.val = rgb(R, G, B))
+    
+    list(
+      raw = df_part,
+      wide = df_wide
+    )
+  })
+  
+  # name splits
+  names(splits) <- paste0("part_", 1:n)
+  
+  return(splits)
+}
+
+split_df(parrots_df, 3)
+splits <- split_df(parrots_df, 3)
+
+df_1 <- splits$part_1$wide
+df_2 <- splits$part_2$wide
+df_3 <- splits$part_3$wide
+
+df_1 %>% ggplot(aes(x,y)) +
+  geom_raster(aes(fill = rgb.val)) +
+  scale_fill_identity() +
+  scale_y_reverse()
+
+
+rgb_plot <- function(df) {
+  p <- df %>% ggplot(aes(x,y)) +
+    geom_raster(aes(fill = rgb.val)) +
+    scale_fill_identity() +
+    scale_y_reverse()
+  
+  return(p)
+}
+
+rgb_plot(df_3)
+
+
+
+
+
+
+# own image -----
 image <- load.image("Data/berserk_vol1.jpg")
 plot(image)
 
@@ -132,3 +235,5 @@ df_ss_flip %>% ggplot(aes(x,y)) +
   geom_raster(aes(fill=value)) +
   scale_y_reverse() +
   scale_fill_continuous(low = "black", high = "white") # bit of a manual grayscale
+
+
