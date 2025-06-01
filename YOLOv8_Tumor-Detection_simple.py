@@ -30,3 +30,20 @@ metrics = trained_model.val()
 
 cm = metrics.confusion_matrix
 print(cm.matrix)
+
+from PIL import Image
+import os, hashlib
+
+def img_hash(path):
+    return hashlib.md5(Image.open(path).convert("RGB").tobytes()).hexdigest()
+
+folder1 = "Data/Brain-Tumor-simple/train/tumor"
+folder2 = "Data/Brain-Tumor-simple/val/tumor"
+
+hashes1 = {img_hash(os.path.join(folder1, f)) for f in os.listdir(folder1)}
+hashes2 = {img_hash(os.path.join(folder2, f)) for f in os.listdir(folder2)}
+
+dupes = hashes1 & hashes2
+print(f"Found {len(dupes)} duplicate images.")
+
+# 104 dupes found
