@@ -124,7 +124,7 @@ pdf_2_w <- pdf_2 %>%
 colnames(pdf_2_w) <- c("x","y","R","G","B")
 
 pdf_2_w <- pdf_2_w %>% 
-  mutate(rbg.val = rgb(R,G,B))
+  mutate(rgb.val = rgb(R,G,B))
 
 pdf_2_w %>% ggplot(aes(x,y)) + 
   geom_raster(aes(fill=rbg.val)) + 
